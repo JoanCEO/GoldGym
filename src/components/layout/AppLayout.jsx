@@ -60,7 +60,7 @@ export default function AppLayout({ children }) {
               <Flame className="w-5 h-5 text-white" />
             </div>
             <span className="font-display font-bold text-xl text-brand-text tracking-wide">
-              IRON<span className="text-brand-red">FORGE</span>
+              Gold´s<span className="text-brand-red">Gym</span>
             </span>
           </Link>
         </div>
@@ -129,7 +129,7 @@ export default function AppLayout({ children }) {
               <Flame className="w-5 h-5 text-white" />
             </div>
             <span className="font-display font-bold text-xl text-brand-text">
-              IRON<span className="text-brand-red">FORGE</span>
+              Gold´s<span className="text-brand-red"> Gym</span>
             </span>
           </div>
           <button onClick={() => setMobileOpen(false)} className="btn-ghost p-1 rounded-lg">
@@ -183,9 +183,15 @@ export default function AppLayout({ children }) {
           <button onClick={() => setMobileOpen(true)} className="btn-ghost p-2 rounded-lg">
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-display font-bold text-lg text-brand-text">
-            IRON<span className="text-brand-red">FORGE</span>
-          </span>
+          <Link
+            to="/"
+            onClick={() => setMobileOpen(false)}
+            className="no-underline"
+          >
+            <span className="font-display font-bold text-lg text-brand-text">
+              Gold´s <span className="text-brand-red">Gym</span>
+            </span>
+          </Link>
           <button
             onClick={() => setShowCreate(true)}
             className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center"

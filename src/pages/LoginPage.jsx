@@ -46,7 +46,7 @@ export default function LoginPage() {
             <Flame className="w-7 h-7 text-white" />
           </div>
           <h1 className="font-display font-bold text-3xl text-brand-text tracking-wide">
-            IRON<span className="text-brand-red">FORGE</span>
+            Gold´s<span className="text-brand-red"> Gym</span>
           </h1>
           <p className="text-brand-sub text-sm mt-1">A comunidade fitness que treina junto.</p>
         </div>

@@ -8,4 +8,16 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  server: {
+  proxy: {
+    '/api/exercises': {
+      target: 'https://oss.exercisedb.dev',
+      changeOrigin: true,
+      rewrite: () => '/api/v1/exercises',
+    },
+  },
+},
 })
+
+
+
