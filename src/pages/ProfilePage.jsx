@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Edit2, Camera, Calendar, Dumbbell, Flame } from 'lucide-react'
+import { Edit2, Camera, Calendar, Dumbbell, Flame, ChevronDown, ChevronUp } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/lib/supabase'
@@ -93,14 +93,127 @@ function EditProfileModal({ open, onClose, profile, onSaved }) {
   )
 }
 
+const WEEKDAYS_FULL = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+function PlanRow({ plan }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between gap-3 p-4">
+        <div className="min-w-0">
+          <h3 className="font-semibold text-brand-text">{plan.name}</h3>
+
+          {plan.days?.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {plan.days.map(day => (
+                <span key={day} className="badge-gray text-xs">
+                  {WEEKDAYS_FULL[day]}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-1 text-xs text-brand-sub">
+            {plan.exercises?.length || 0} exercício{plan.exercises?.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setExpanded(v => !v)}
+          className="btn-ghost rounded-lg p-2 shrink-0"
+          title={expanded ? 'Recolher' : 'Expandir'}
+        >
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="border-t border-brand-border px-4 pb-4 pt-3 space-y-2">
+          {plan.exercises?.length ? (
+            plan.exercises.map((ex, i) => (
+              <div key={`${ex.id || ex.name}-${i}`} className="flex items-center gap-3 rounded-lg bg-brand-card2 p-3">
+                {ex.gifUrl && (
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-brand-border bg-brand-card2">
+                    <img
+                      src={ex.gifUrl}
+                      alt={ex.name}
+                      loading="lazy"
+                      className="h-full w-full object-contain"
+                      onError={e => { e.currentTarget.style.display = 'none' }}
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-brand-text capitalize">{ex.name}</p>
+                  <p className="text-xs text-brand-sub mt-0.5">
+                    {ex.sets || '—'} séries × {ex.reps || '—'} reps
+                    {ex.weight ? ` — ${ex.weight} kg` : ''}
+                  </p>
+                  {ex.targetMuscles && (
+                    <p className="text-xs text-brand-sub">{ex.targetMuscles}</p>
+                  )}
+                </div>
+                <span className="text-xs font-bold text-brand-red shrink-0">#{i + 1}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-brand-sub">Esta ficha não possui exercícios.</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PlansTab({ plans, loading, isOwnProfile }) {
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2].map(i => (
+          <div key={i} className="card p-4 animate-pulse">
+            <div className="h-4 w-40 rounded bg-brand-card2" />
+            <div className="mt-2 h-3 w-24 rounded bg-brand-card2" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (plans.length === 0) {
+    return (
+      <EmptyState
+        icon={Dumbbell}
+        title="Nenhuma ficha"
+        description={
+          isOwnProfile
+            ? 'Você ainda não criou nenhuma ficha de treino.'
+            : 'Este usuário ainda não criou fichas.'
+        }
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      {plans.map(plan => (
+        <PlanRow key={plan.id} plan={plan} />
+      ))}
+    </div>
+  )
+}
+
 export default function ProfilePage() {
   const { username } = useParams()
   const { user, profile: myProfile } = useAuth()
   const [profile, setProfile] = useState(null)
   const [posts, setPosts] = useState([])
+  const [plans, setPlans] = useState([])
   const [stats, setStats] = useState({ total: 0 })
   const [loading, setLoading] = useState(true)
   const [postsLoading, setPostsLoading] = useState(true)
+  const [plansLoading, setPlansLoading] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [activeTab, setActiveTab] = useState('posts')
 
@@ -121,6 +234,7 @@ export default function ProfilePage() {
     if (data) {
       loadPosts(data.id)
       loadStats(data.id)
+      loadPlans(data.id)
     }
   }
 
@@ -131,6 +245,17 @@ export default function ProfilePage() {
       .eq('user_id', userId).order('created_at', { ascending: false }).limit(20)
     setPosts(data || [])
     setPostsLoading(false)
+  }
+
+  async function loadPlans(userId) {
+    setPlansLoading(true)
+    const { data } = await supabase
+      .from('workout_plans')
+      .select('id, name, days, exercises, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+    setPlans(data || [])
+    setPlansLoading(false)
   }
 
   async function loadStats(userId) {
@@ -219,7 +344,11 @@ export default function ProfilePage() {
       )}
 
       {activeTab === 'fichas' && (
-        <EmptyState icon={Dumbbell} title="Fichas" description="As fichas compartilhadas aparecerão aqui." />
+        <PlansTab
+          plans={plans}
+          loading={plansLoading}
+          isOwnProfile={isOwnProfile}
+        />
       )}
 
       <EditProfileModal
